@@ -7,6 +7,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import ru.akirakozov.sd.refactoring.dao.ProductDao;
 import ru.akirakozov.sd.refactoring.servlet.AddProductServlet;
 import ru.akirakozov.sd.refactoring.servlet.GetProductsServlet;
 import ru.akirakozov.sd.refactoring.servlet.QueryServlet;
@@ -52,14 +53,11 @@ public class ServerTest {
     private static Server server;
 
     @BeforeAll
-    public static void init() {
-        try (Connection c = DriverManager.getConnection(CONNECTION_URL)) {
-            Statement stmt = c.createStatement();
-            stmt.executeUpdate(CREATE_PRODUCT_TABLE_SQL_QUERY);
-            stmt.close();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    public static void init() throws SQLException {
+        Connection c = DriverManager.getConnection(CONNECTION_URL);
+        Statement stmt = c.createStatement();
+        stmt.executeUpdate(CREATE_PRODUCT_TABLE_SQL_QUERY);
+        stmt.close();
 
         server = new Server(SERVER_PORT);
 
@@ -67,9 +65,11 @@ public class ServerTest {
         context.setContextPath("/");
         server.setHandler(context);
 
-        context.addServlet(new ServletHolder(new AddProductServlet()), "/" + ADD_PRODUCT_ENDPOINT);
-        context.addServlet(new ServletHolder(new GetProductsServlet()), "/" + GET_PRODUCTS_ENDPOINT);
-        context.addServlet(new ServletHolder(new QueryServlet()), "/" + QUERY_ENDPOINT);
+        ProductDao productDao = new ProductDao(c);
+
+        context.addServlet(new ServletHolder(new AddProductServlet(productDao)), "/" + ADD_PRODUCT_ENDPOINT);
+        context.addServlet(new ServletHolder(new GetProductsServlet(productDao)), "/" + GET_PRODUCTS_ENDPOINT);
+        context.addServlet(new ServletHolder(new QueryServlet(productDao)), "/" + QUERY_ENDPOINT);
 
         try {
             server.start();
@@ -93,7 +93,7 @@ public class ServerTest {
     @AfterEach
     public void clearTable() {
         try (Connection c = DriverManager.getConnection(CONNECTION_URL)) {
-            String sql = "DELETE FROM PRODUCT WHERE TRUE";
+            String sql = "DELETE FROM PRODUCT";
             Statement stmt = c.createStatement();
 
             stmt.executeUpdate(sql);

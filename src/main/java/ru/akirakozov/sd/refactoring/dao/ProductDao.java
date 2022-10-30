@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author Michael Gerasimov
@@ -39,13 +40,13 @@ public class ProductDao {
 
     public void addProduct(String name, long price) {
         try (Statement statement = connection.createStatement()) {
-            statement.executeQuery("INSERT INTO PRODUCT (NAME, PRICE) VALUES (\"" + name + "\"," + price + ")");
+            statement.executeUpdate("INSERT INTO PRODUCT (NAME, PRICE) VALUES (\"" + name + "\"," + price + ")");
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public Product getProductWithMaxPrice() {
+    public Optional<Product> getProductWithMaxPrice() {
         try (Statement statement = connection.createStatement()) {
             try (ResultSet rs = statement.executeQuery("SELECT * FROM PRODUCT ORDER BY PRICE DESC LIMIT 1")) {
                 List<Product> products = new ArrayList<>();
@@ -56,9 +57,7 @@ public class ProductDao {
                     ));
                 }
 
-                return products.stream()
-                        .findFirst()
-                        .orElseThrow(() -> new IllegalStateException("add error message"));
+                return products.stream().findFirst();
             }
 
         } catch (SQLException e) {
@@ -66,7 +65,7 @@ public class ProductDao {
         }
     }
 
-    public Product getProductWithMinPrice() {
+    public Optional<Product> getProductWithMinPrice() {
         try (Statement statement = connection.createStatement()) {
             try (ResultSet rs = statement.executeQuery("SELECT * FROM PRODUCT ORDER BY PRICE LIMIT 1")) {
                 List<Product> products = new ArrayList<>();
@@ -77,9 +76,7 @@ public class ProductDao {
                     ));
                 }
 
-                return products.stream()
-                        .findFirst()
-                        .orElseThrow(() -> new IllegalStateException("add error message"));
+                return products.stream().findFirst();
             }
 
         } catch (SQLException e) {
