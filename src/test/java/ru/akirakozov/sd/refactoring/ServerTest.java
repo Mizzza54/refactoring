@@ -1,16 +1,10 @@
 package ru.akirakozov.sd.refactoring;
 
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import ru.akirakozov.sd.refactoring.dao.ProductDao;
-import ru.akirakozov.sd.refactoring.servlet.AddProductServlet;
-import ru.akirakozov.sd.refactoring.servlet.GetProductsServlet;
-import ru.akirakozov.sd.refactoring.servlet.QueryServlet;
 
 import java.io.IOException;
 import java.net.URI;
@@ -35,47 +29,19 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 public class ServerTest {
     private static final String CONNECTION_URL = "jdbc:sqlite:test.db";
-    private static final String CREATE_PRODUCT_TABLE_SQL_QUERY =
-            "CREATE TABLE IF NOT EXISTS PRODUCT " +
-                    "(ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-                    " NAME           TEXT    NOT NULL, " +
-                    " PRICE          INT     NOT NULL) ";
 
     private static final String SERVER_HOST = "localhost";
     private static final int SERVER_PORT = 8081;
     private static final String SERVER_URL = String.format("http://%s:%s", SERVER_HOST, SERVER_PORT);
 
-    public static final String ADD_PRODUCT_ENDPOINT = "add-product";
-    public static final String GET_PRODUCTS_ENDPOINT = "get-products";
-    public static final String QUERY_ENDPOINT = "query";
     private static final HttpClient client = HttpClient.newHttpClient();
 
     private static Server server;
 
     @BeforeAll
-    public static void init() throws SQLException {
-        Connection c = DriverManager.getConnection(CONNECTION_URL);
-        Statement stmt = c.createStatement();
-        stmt.executeUpdate(CREATE_PRODUCT_TABLE_SQL_QUERY);
-        stmt.close();
-
-        server = new Server(SERVER_PORT);
-
-        ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
-        context.setContextPath("/");
-        server.setHandler(context);
-
-        ProductDao productDao = new ProductDao(c);
-
-        context.addServlet(new ServletHolder(new AddProductServlet(productDao)), "/" + ADD_PRODUCT_ENDPOINT);
-        context.addServlet(new ServletHolder(new GetProductsServlet(productDao)), "/" + GET_PRODUCTS_ENDPOINT);
-        context.addServlet(new ServletHolder(new QueryServlet(productDao)), "/" + QUERY_ENDPOINT);
-
-        try {
-            server.start();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    public static void init() throws Exception {
+        server = Main.createServer(CONNECTION_URL, SERVER_PORT);
+        server.start();
     }
 
     @AfterAll
@@ -107,7 +73,7 @@ public class ServerTest {
     public void addProductTest() {
         assertResponse(
                 buildUri(
-                        List.of(ADD_PRODUCT_ENDPOINT),
+                        List.of(Main.ADD_PRODUCT_ENDPOINT),
                         Map.of(
                                 "name", "test-product",
                                 "price", String.valueOf(Long.MAX_VALUE)
@@ -122,7 +88,7 @@ public class ServerTest {
     public void addProductWithNegativePriceTest() {
         assertResponse(
                 buildUri(
-                        List.of(ADD_PRODUCT_ENDPOINT),
+                        List.of(Main.ADD_PRODUCT_ENDPOINT),
                         Map.of(
                                 "name", "test-product",
                                 "price", "-42"
@@ -137,7 +103,7 @@ public class ServerTest {
     public void addProductWithoutPriceTest() {
         assertResponse(
                 buildUri(
-                        List.of(ADD_PRODUCT_ENDPOINT),
+                        List.of(Main.ADD_PRODUCT_ENDPOINT),
                         Map.of(
                                 "name", "test-product"
                         )
@@ -150,7 +116,7 @@ public class ServerTest {
     public void addProductWithoutNameTest() {
         assertResponse(
                 buildUri(
-                        List.of(ADD_PRODUCT_ENDPOINT),
+                        List.of(Main.ADD_PRODUCT_ENDPOINT),
                         Map.of(
                                 "price", "1000"
                         )
@@ -180,7 +146,7 @@ public class ServerTest {
     public void addProductWithInvalidPriceTest() {
         assertResponse(
                 buildUri(
-                        List.of(ADD_PRODUCT_ENDPOINT),
+                        List.of(Main.ADD_PRODUCT_ENDPOINT),
                         Map.of(
                                 "name", "test-product",
                                 "price", "invalid"
@@ -191,7 +157,7 @@ public class ServerTest {
 
         assertResponse(
                 buildUri(
-                        List.of(ADD_PRODUCT_ENDPOINT),
+                        List.of(Main.ADD_PRODUCT_ENDPOINT),
                         Map.of(
                                 "name", "test-product",
                                 "price", "42.13"
@@ -207,7 +173,7 @@ public class ServerTest {
         fillProductTable(products);
         assertResponse(
                 buildUri(
-                        List.of(GET_PRODUCTS_ENDPOINT),
+                        List.of(Main.GET_PRODUCTS_ENDPOINT),
                         Map.of()
                 ),
                 createGetProductsExpectedHtml(products),
@@ -231,7 +197,7 @@ public class ServerTest {
 
         assertResponse(
                 buildUri(
-                        List.of(QUERY_ENDPOINT),
+                        List.of(Main.QUERY_ENDPOINT),
                         Map.of("command", "max")
                 ),
                 String.format(
@@ -265,7 +231,7 @@ public class ServerTest {
 
         assertResponse(
                 buildUri(
-                        List.of(QUERY_ENDPOINT),
+                        List.of(Main.QUERY_ENDPOINT),
                         Map.of("command", "min")
                 ),
                 String.format(
@@ -291,7 +257,7 @@ public class ServerTest {
 
         assertResponse(
                 buildUri(
-                        List.of(QUERY_ENDPOINT),
+                        List.of(Main.QUERY_ENDPOINT),
                         Map.of("command", "sum")
                 ),
                 String.format(
@@ -316,7 +282,7 @@ public class ServerTest {
 
         assertResponse(
                 buildUri(
-                        List.of(QUERY_ENDPOINT),
+                        List.of(Main.QUERY_ENDPOINT),
                         Map.of("command", "count")
                 ),
                 String.format(
@@ -336,7 +302,7 @@ public class ServerTest {
     public void queryUnknownCommandTest() {
         assertResponse(
                 buildUri(
-                        List.of(QUERY_ENDPOINT),
+                        List.of(Main.QUERY_ENDPOINT),
                         Map.of("command", "unknown")
                 ),
                 "Unknown command: unknown\n",
@@ -348,7 +314,7 @@ public class ServerTest {
     public void queryMaxWithEmptyTableTest() {
         assertResponse(
                 buildUri(
-                        List.of(QUERY_ENDPOINT),
+                        List.of(Main.QUERY_ENDPOINT),
                         Map.of("command", "max")
                 ),
                 """
@@ -364,7 +330,7 @@ public class ServerTest {
     public void queryMinWithEmptyTableTest() {
         assertResponse(
                 buildUri(
-                        List.of(QUERY_ENDPOINT),
+                        List.of(Main.QUERY_ENDPOINT),
                         Map.of("command", "min")
                 ),
                 """
@@ -380,7 +346,7 @@ public class ServerTest {
     public void querySumWithEmptyTableTest() {
         assertResponse(
                 buildUri(
-                        List.of(QUERY_ENDPOINT),
+                        List.of(Main.QUERY_ENDPOINT),
                         Map.of("command", "sum")
                 ),
                 String.format(
@@ -400,7 +366,7 @@ public class ServerTest {
     public void queryCountWithEmptyTableTest() {
         assertResponse(
                 buildUri(
-                        List.of(QUERY_ENDPOINT),
+                        List.of(Main.QUERY_ENDPOINT),
                         Map.of("command", "count")
                 ),
                 String.format(

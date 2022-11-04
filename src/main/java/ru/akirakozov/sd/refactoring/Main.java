@@ -26,10 +26,12 @@ public class Main {
 
 
     public static void main(String[] args) throws Exception {
-        createServer(CONNECTION_URL, PORT);
+        Server server = createServer(CONNECTION_URL, PORT);
+        server.start();
+        server.join();
     }
 
-    public static void createServer(String connectionUrl, int port) {
+    public static Server createServer(String connectionUrl, int port) {
         try {
             Connection connection = DriverManager.getConnection(connectionUrl);
             String sql = "CREATE TABLE IF NOT EXISTS PRODUCT" +
@@ -53,8 +55,7 @@ public class Main {
             context.addServlet(new ServletHolder(new GetProductsServlet(productDao)), "/" + GET_PRODUCTS_ENDPOINT);
             context.addServlet(new ServletHolder(new QueryServlet(productDao)), "/" + QUERY_ENDPOINT);
 
-            server.start();
-            server.join();
+            return server;
         } catch (Exception e) {
             throw new RuntimeException("Can not start server", e);
         }
