@@ -6,7 +6,10 @@ import ru.akirakozov.sd.refactoring.model.Product;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+
+import static ru.akirakozov.sd.refactoring.utils.HtmlBuilder.addBody;
+import static ru.akirakozov.sd.refactoring.utils.HtmlBuilder.addBr;
+import static ru.akirakozov.sd.refactoring.utils.HtmlBuilder.addHtml;
 
 /**
  * @author akirakozov
@@ -19,15 +22,14 @@ public class GetProductsServlet extends HttpServlet {
     }
 
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) {
         try {
-            response.getWriter().println("<html><body>");
-
+            StringBuilder productList = new StringBuilder();
             for (Product product : productDao.getAllProducts()) {
-                response.getWriter().println(product.getName() + "\t" + product.getPrice() + "</br>");
+                productList.append(addBr(product.getName() + "\t" + product.getPrice()));
             }
 
-            response.getWriter().println("</body></html>");
+            response.getWriter().println(addHtml(addBody(productList.toString())));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

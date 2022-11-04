@@ -1,13 +1,16 @@
 package ru.akirakozov.sd.refactoring.servlet;
 
 import ru.akirakozov.sd.refactoring.dao.ProductDao;
-import ru.akirakozov.sd.refactoring.model.Product;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Optional;
+
+import static ru.akirakozov.sd.refactoring.utils.HtmlBuilder.addBody;
+import static ru.akirakozov.sd.refactoring.utils.HtmlBuilder.addBr;
+import static ru.akirakozov.sd.refactoring.utils.HtmlBuilder.addH1;
+import static ru.akirakozov.sd.refactoring.utils.HtmlBuilder.addHtml;
 
 /**
  * @author akirakozov
@@ -23,48 +26,37 @@ public class QueryServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String command = request.getParameter("command");
 
+        StringBuilder innerBody = new StringBuilder();
         switch (command) {
             case "max" -> {
-                response.getWriter().println("<html><body>");
-                response.getWriter().println("<h1>Product with max price: </h1>");
+                innerBody.append(addH1("Product with max price: "));
                 productDao.getProductWithMaxPrice().ifPresent(p ->
-                        {
-                            try {
-                                response.getWriter().println(p.getName() + "\t" + p.getPrice() + "</br>");
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                        }
+                        innerBody.append(addBr(p.getName() + "\t" + p.getPrice()))
                 );
-                response.getWriter().println("</body></html>");
             }
             case "min" -> {
-                response.getWriter().println("<html><body>");
-                response.getWriter().println("<h1>Product with min price: </h1>");
+                innerBody.append(addH1("Product with min price: "));
                 productDao.getProductWithMinPrice().ifPresent(p ->
-                        {
-                            try {
-                                response.getWriter().println(p.getName() + "\t" + p.getPrice() + "</br>");
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                        }
+                        innerBody.append(addBr(p.getName() + "\t" + p.getPrice()))
                 );
-                response.getWriter().println("</body></html>");
             }
-            case "sum" -> {
-                response.getWriter().println("<html><body>");
-                response.getWriter().println("Summary price: ");
-                response.getWriter().println(productDao.getProductsSummaryPrice());
-                response.getWriter().println("</body></html>");
-            }
-            case "count" -> {
-                response.getWriter().println("<html><body>");
-                response.getWriter().println("Number of products: ");
-                response.getWriter().println(productDao.getProductsCount());
-                response.getWriter().println("</body></html>");
-            }
+            case "sum" -> innerBody.append(
+                    String.format(
+                            "Summary price: \n%s\n",
+                            productDao.getProductsSummaryPrice()
+                    )
+            );
+            case "count" -> innerBody.append(
+                    String.format(
+                            "Number of products: \n%s\n",
+                            productDao.getProductsCount()
+                    )
+            );
             default -> response.getWriter().println("Unknown command: " + command);
+        }
+
+        if (!innerBody.isEmpty()) {
+            response.getWriter().println(addHtml(addBody(innerBody.toString())));
         }
 
         response.setContentType("text/html");
