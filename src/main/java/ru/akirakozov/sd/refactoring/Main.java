@@ -10,36 +10,53 @@ import ru.akirakozov.sd.refactoring.servlet.QueryServlet;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 /**
  * @author akirakozov
  */
 public class Main {
+    private static final String CONNECTION_URL = "jdbc:sqlite:prod.db";
+    private static final int PORT = 8081;
+
+    public static final String ADD_PRODUCT_ENDPOINT = "add-product";
+    public static final String GET_PRODUCTS_ENDPOINT = "get-products";
+    public static final String QUERY_ENDPOINT = "query";
+
+
     public static void main(String[] args) throws Exception {
-        Connection c = DriverManager.getConnection("jdbc:sqlite:test.db");
-        String sql = "CREATE TABLE IF NOT EXISTS PRODUCT" +
-                "(ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL," +
-                " NAME           TEXT    NOT NULL, " +
-                " PRICE          INT     NOT NULL)";
-        Statement stmt = c.createStatement();
+        createServer(CONNECTION_URL, PORT);
+    }
 
-        stmt.executeUpdate(sql);
-        stmt.close();
+    public static void createServer(String connectionUrl, int port) {
+        try {
+            Connection connection = DriverManager.getConnection(connectionUrl);
+            String sql = "CREATE TABLE IF NOT EXISTS PRODUCT" +
+                    "(ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL," +
+                    " NAME           TEXT    NOT NULL, " +
+                    " PRICE          INT     NOT NULL)";
+            Statement stmt = connection.createStatement();
 
-        ProductDao productDao = new ProductDao(c);
+            stmt.executeUpdate(sql);
+            stmt.close();
 
-        Server server = new Server(8081);
+            ProductDao productDao = new ProductDao(connection);
 
-        ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
-        context.setContextPath("/");
-        server.setHandler(context);
+            Server server = new Server(port);
 
-        context.addServlet(new ServletHolder(new AddProductServlet(productDao)), "/add-product");
-        context.addServlet(new ServletHolder(new GetProductsServlet(productDao)), "/get-products");
-        context.addServlet(new ServletHolder(new QueryServlet(productDao)), "/query");
+            ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+            context.setContextPath("/");
+            server.setHandler(context);
 
-        server.start();
-        server.join();
+            context.addServlet(new ServletHolder(new AddProductServlet(productDao)), "/" + ADD_PRODUCT_ENDPOINT);
+            context.addServlet(new ServletHolder(new GetProductsServlet(productDao)), "/" + GET_PRODUCTS_ENDPOINT);
+            context.addServlet(new ServletHolder(new QueryServlet(productDao)), "/" + QUERY_ENDPOINT);
+
+            server.start();
+            server.join();
+        } catch (Exception e) {
+            throw new RuntimeException("Can not start server", e);
+        }
     }
 }
