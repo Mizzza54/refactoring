@@ -14,10 +14,22 @@ import java.util.Optional;
  * @author Michael Gerasimov
  */
 public class ProductDao {
+    private static final String INIT_PRODUCT_TABLE_QUERY =
+            """
+            CREATE TABLE IF NOT EXISTS PRODUCT
+            ( ID    INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+              NAME  TEXT                              NOT NULL,
+              PRICE INT                               NOT NULL)
+            """;
     private final Connection connection;
 
     public ProductDao(Connection connection) {
         this.connection = connection;
+        try (Statement statement = connection.createStatement()) {
+            statement.executeUpdate(INIT_PRODUCT_TABLE_QUERY);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public List<Product> getAllProducts() {
