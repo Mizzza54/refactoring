@@ -21,21 +21,20 @@ public class ProductDao {
     }
 
     public List<Product> getAllProducts() {
-        try (Statement statement = connection.createStatement()) {
-            try (ResultSet rs = statement.executeQuery("SELECT * FROM PRODUCT")) {
-                List<Product> products = new ArrayList<>();
-                while (rs.next()) {
-                    products.add(new Product(
-                            rs.getString("name"),
-                            rs.getInt("price")
-                    ));
-                }
+        return executeQueryWithResultSet(
+                "SELECT * FROM PRODUCT",
+                resultSet -> {
+                    List<Product> products = new ArrayList<>();
+                    while (resultSet.next()) {
+                        products.add(new Product(
+                                resultSet.getString("name"),
+                                resultSet.getInt("price")
+                        ));
+                    }
 
-                return products;
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+                    return products;
+                }
+        );
     }
 
     public void addProduct(String name, long price) {
@@ -47,76 +46,89 @@ public class ProductDao {
     }
 
     public Optional<Product> getProductWithMaxPrice() {
-        try (Statement statement = connection.createStatement()) {
-            try (ResultSet rs = statement.executeQuery("SELECT * FROM PRODUCT ORDER BY PRICE DESC LIMIT 1")) {
-                List<Product> products = new ArrayList<>();
-                while (rs.next()) {
-                    products.add(new Product(
-                            rs.getString("name"),
-                            rs.getInt("price")
-                    ));
+        return executeQueryWithResultSet(
+                "SELECT * FROM PRODUCT ORDER BY PRICE DESC LIMIT 1",
+                resultSet -> {
+                    List<Product> products = new ArrayList<>();
+                    while (resultSet.next()) {
+                        products.add(new Product(
+                                resultSet.getString("name"),
+                                resultSet.getInt("price")
+                        ));
+                    }
+
+                    return products.stream().findFirst();
                 }
-
-                return products.stream().findFirst();
-            }
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        );
     }
 
     public Optional<Product> getProductWithMinPrice() {
-        try (Statement statement = connection.createStatement()) {
-            try (ResultSet rs = statement.executeQuery("SELECT * FROM PRODUCT ORDER BY PRICE LIMIT 1")) {
-                List<Product> products = new ArrayList<>();
-                while (rs.next()) {
-                    products.add(new Product(
-                            rs.getString("name"),
-                            rs.getInt("price")
-                    ));
+        return executeQueryWithResultSet(
+                "SELECT * FROM PRODUCT ORDER BY PRICE LIMIT 1",
+                resultSet -> {
+                    List<Product> products = new ArrayList<>();
+                    while (resultSet.next()) {
+                        products.add(new Product(
+                                resultSet.getString("name"),
+                                resultSet.getInt("price")
+                        ));
+                    }
+
+                    return products.stream().findFirst();
                 }
-
-                return products.stream().findFirst();
-            }
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        );
     }
 
     public int getProductsCount() {
-        try (Statement statement = connection.createStatement()) {
-            try (ResultSet rs = statement.executeQuery("SELECT COUNT(*) FROM PRODUCT")) {
-                List<Integer> counts = new ArrayList<>();
-                while (rs.next()) {
-                    counts.add(rs.getInt(1));
+        return executeQueryWithResultSet(
+                "SELECT COUNT(*) FROM PRODUCT",
+                resultSet -> {
+                    List<Integer> counts = new ArrayList<>();
+                    while (resultSet.next()) {
+                        counts.add(resultSet.getInt(1));
+                    }
+
+                    return counts.stream()
+                            .findFirst()
+                            .orElseThrow(() -> new IllegalStateException("add error message"));
                 }
-
-                return counts.stream()
-                        .findFirst()
-                        .orElseThrow(() -> new IllegalStateException("add error message"));
-            }
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        );
     }
 
     public long getProductsSummaryPrice() {
-        try (Statement statement = connection.createStatement()) {
-            try (ResultSet rs = statement.executeQuery("SELECT SUM(price) FROM PRODUCT")) {
-                List<Long> counts = new ArrayList<>();
-                while (rs.next()) {
-                    counts.add(rs.getLong(1));
+        return executeQueryWithResultSet(
+                "SELECT SUM(price) FROM PRODUCT",
+                resultSet -> {
+                    List<Long> counts = new ArrayList<>();
+                    while (resultSet.next()) {
+                        counts.add(resultSet.getLong(1));
+                    }
+
+                    return counts.stream()
+                            .findFirst()
+                            .orElseThrow(() -> new IllegalStateException("add error message"));
                 }
+        );
+    }
 
-                return counts.stream()
-                        .findFirst()
-                        .orElseThrow(() -> new IllegalStateException("add error message"));
+    private <T> T executeQueryWithResultSet(
+            String sqlQuery,
+            CheckedResultSetFunction<T> function
+    ) {
+        T result;
+        try (Statement statement = connection.createStatement()) {
+            try (ResultSet rs = statement.executeQuery(sqlQuery)) {
+                result = function.apply(rs);
             }
-
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+
+        return result;
+    }
+
+    @FunctionalInterface
+    private interface CheckedResultSetFunction<T> {
+        T apply(ResultSet t) throws SQLException;
     }
 }
