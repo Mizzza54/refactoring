@@ -15,7 +15,9 @@ import static ru.akirakozov.sd.refactoring.utils.HtmlBuilder.addHtml;
  * @author akirakozov
  */
 public class GetProductsServlet extends HttpServlet {
-    ProductDao productDao;
+    private static final String CONTENT_TYPE = "text/html";
+
+    private final ProductDao productDao;
 
     public GetProductsServlet(ProductDao productDao) {
         this.productDao = productDao;
@@ -34,7 +36,7 @@ public class GetProductsServlet extends HttpServlet {
             throw new RuntimeException(e);
         }
 
-        response.setContentType("text/html");
+        response.setContentType(CONTENT_TYPE);
         response.setStatus(HttpServletResponse.SC_OK);
     }
 }

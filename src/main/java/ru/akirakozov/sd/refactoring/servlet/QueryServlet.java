@@ -16,6 +16,8 @@ import static ru.akirakozov.sd.refactoring.utils.HtmlBuilder.addHtml;
  * @author akirakozov
  */
 public class QueryServlet extends HttpServlet {
+    private static final String CONTENT_TYPE = "text/html";
+
     private final ProductDao productDao;
 
     public QueryServlet(ProductDao productDao) {
@@ -59,7 +61,7 @@ public class QueryServlet extends HttpServlet {
             response.getWriter().println(addHtml(addBody(innerBody.toString())));
         }
 
-        response.setContentType("text/html");
+        response.setContentType(CONTENT_TYPE);
         response.setStatus(HttpServletResponse.SC_OK);
     }
 

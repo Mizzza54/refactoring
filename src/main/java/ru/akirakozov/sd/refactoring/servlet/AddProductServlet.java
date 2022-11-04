@@ -11,6 +11,8 @@ import java.io.IOException;
  * @author akirakozov
  */
 public class AddProductServlet extends HttpServlet {
+    private static final String CONTENT_TYPE = "text/html";
+
     private final ProductDao productDao;
 
     public AddProductServlet(ProductDao productDao) {
@@ -24,7 +26,7 @@ public class AddProductServlet extends HttpServlet {
 
         productDao.addProduct(name, price);
 
-        response.setContentType("text/html");
+        response.setContentType(CONTENT_TYPE);
         response.setStatus(HttpServletResponse.SC_OK);
         response.getWriter().println("OK");
     }
