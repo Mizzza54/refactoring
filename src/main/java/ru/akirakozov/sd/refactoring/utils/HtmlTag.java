@@ -3,7 +3,7 @@ package ru.akirakozov.sd.refactoring.utils;
 /**
  * @author Michael Gerasimov
  */
-public enum HtmlTags {
+public enum HtmlTag {
     HTML("html", true, false, false),
     BODY("body", true, true, false),
     H1("h1", true, false, true),
@@ -14,7 +14,7 @@ public enum HtmlTags {
     private final boolean needStartLineBreak;
     private final boolean needEndLineBreak;
 
-    HtmlTags(String externalName, boolean hasStartTag, boolean needStartLineBreak, boolean needEndLineBreak) {
+    HtmlTag(String externalName, boolean hasStartTag, boolean needStartLineBreak, boolean needEndLineBreak) {
         this.externalName = externalName;
         this.hasStartTag = hasStartTag;
         this.needStartLineBreak = needStartLineBreak;
